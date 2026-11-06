@@ -3,110 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DARKNET VPN</title>
+<title>DARKNET VPN 2.0</title>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#090909;color:#eee;
- font-family:Tahoma,Arial,sans-serif;
-}
-header{
- padding:25px 20px;background:#111;
- border-bottom:1px solid #a77b27;
-}
-.logo{color:#d6ad55;font-size:25px;font-weight:bold}
-header p{color:#888;font-size:12px}
-main{padding:20px;max-width:900px;margin:auto}
-.card{
- background:#141414;border:1px solid #292929;
- border-radius:13px;padding:18px;margin-bottom:16px;
-}
+body{margin:0;background:#090909;color:#eee;font-family:Tahoma,Arial}
+header{padding:24px;background:#111;border-bottom:1px solid #bd984e}
+.logo{font-size:26px;font-weight:bold;color:#d6ad55}
+header small{color:#888}
+main{max-width:950px;margin:auto;padding:18px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.card{background:#151515;border:1px solid #303030;border-radius:13px;padding:17px;margin-bottom:15px}
 h3{color:#d6ad55;margin-top:0}
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.number{font-size:25px;color:#d6ad55}
-input{
- width:100%;padding:13px;margin:7px 0;
- background:#090909;color:white;
- border:1px solid #444;border-radius:8px;
-}
-button{
- background:#c49a45;color:#111;border:0;
- border-radius:8px;padding:12px 18px;
- font-weight:bold;cursor:pointer;
-}
-.user{
- padding:13px;border-bottom:1px solid #333;
- display:flex;justify-content:space-between;gap:8px;
-}
-small{color:#999}
-.delete{background:#772b2b;color:white}
-footer{text-align:center;color:#666;padding:25px;font-size:12px}
+.num{font-size:27px;color:#d6ad55;margin-top:8px}
+input,select{width:100%;padding:13px;margin:7px 0;background:#090909;color:white;border:1px solid #444;border-radius:8px}
+button{padding:11px 15px;border:0;border-radius:8px;background:#c49a45;color:#111;font-weight:bold;cursor:pointer}
+.delete{background:#762d2d;color:white}
+.user{border-bottom:1px solid #333;padding:13px 0;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.user small{display:block;color:#999;margin-top:7px}
+.active{color:#65d69a}.expired{color:#ff7777}
+#search{margin-bottom:12px}
+footer{text-align:center;color:#777;padding:22px;font-size:12px}
 </style>
 </head>
 <body>
 <header>
  <div class="logo">DARKNET VPN</div>
- <p>PRIVATE NETWORK MANAGEMENT PANEL</p>
+ <small>PRIVATE NETWORK MANAGEMENT • VERSION 2.0</small>
 </header>
 <main>
- <div class="stats">
-  <div class="card">
-   <small>تعداد کاربران</small>
-   <div class="number" id="count">0</div>
-  </div>
-  <div class="card">
-   <small>وضعیت پنل</small>
-   <div class="number">ONLINE</div>
-  </div>
+ <div class="grid">
+  <div class="card"><small>کل کاربران</small><div class="num" id="total">0</div></div>
+  <div class="card"><small>کاربران فعال</small><div class="num" id="active">0</div></div>
  </div>
-
- <div class="card">
-  <h3>افزودن کاربر</h3>
+ <section class="card">
+  <h3>افزودن کاربر جدید</h3>
   <input id="name" placeholder="نام کاربر">
-  <input id="days" type="number" placeholder="مدت اعتبار (روز)">
-  <button onclick="addUser()">افزودن کاربر</button>
- </div>
-
- <div class="card">
+  <label>مدت اعتبار (روز)</label>
+  <input id="days" type="number" min="1" placeholder="مثلاً 30">
+  <label>حجم اشتراک (GB)</label>
+  <input id="volume" type="number" min="1" placeholder="مثلاً 50">
+  <label>پروتکل موردنظر</label>
+  <select id="protocol">
+   <option>VLESS</option>
+   <option>Trojan</option>
+   <option>Shadowsocks</option>
+  </select>
+  <button onclick="addUser()">+ افزودن کاربر</button>
+ </section>
+ <section class="card">
   <h3>مدیریت کاربران</h3>
+  <input id="search" placeholder="جست‌وجوی نام کاربر..." oninput="render()">
   <div id="users"></div>
- </div>
- <div class="card">
-  <small>نسخه 1.0 | DARKNET VPN</small>
- </div>
+ </section>
+ <section class="card">
+  <small>وضعیت: پنل مدیریت محلی | DARKNET VPN 2.0</small>
+ </section>
 </main>
 <footer>POWERED BY DARKNET</footer>
 <script>
-let users=JSON.parse(localStorage.getItem("darknet_users")||"[]");
-
-function render(){
- document.getElementById("count").textContent=users.length;
- document.getElementById("users").innerHTML="";
- users.forEach((u,i)=>{
-  let div=document.createElement("div");
-  div.className="user";
-  let info=document.createElement("span");
-  info.textContent=u.name+" - "+u.days+" روز";
-  let btn=document.createElement("button");
-  btn.className="delete";
-  btn.textContent="حذف";
-  btn.onclick=()=>{users.splice(i,1);save()};
-  div.append(info,btn);
-  document.getElementById("users").append(div);
- });
-}
+const KEY="darknet_v2_users";
+let users=JSON.parse(localStorage.getItem(KEY)||"[]");
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem(KEY,JSON.stringify(users));render()}
 function addUser(){
- let name=document.getElementById("name").value.trim();
- let days=Number(document.getElementById("days").value);
- if(!name||!Number.isInteger(days)||days<1)return;
- users.push({name,days});
+ const name=$("name").value.trim();
+ const days=Number($("days").value);
+ const volume=Number($("volume").value);
+ if(!name||!Number.isInteger(days)||days<1||!Number.isFinite(volume)||volume<=0){
+  alert("لطفاً اطلاعات را درست وارد کن.");return;
+ }
+ const expires=new Date(Date.now()+days*86400000).toISOString();
+ users.push({id:crypto.randomUUID(),name,days,volume,protocol:$("protocol").value,expires});
+ $("name").value="";$("days").value="";$("volume").value="";
  save();
- document.getElementById("name").value="";
- document.getElementById("days").value="";
 }
-function save(){
- localStorage.setItem("darknet_users",JSON.stringify(users));
- render();
+function render(){
+ $("total").textContent=users.length;
+ $("active").textContent=users.filter(u=>new Date(u.expires)>new Date()).length;
+ const q=$("search").value.trim().toLowerCase();
+ const list=$("users");list.replaceChildren();
+ const filtered=users.filter(u=>u.name.toLowerCase().includes(q));
+ if(!filtered.length){list.textContent="کاربری پیدا نشد.";return}
+ filtered.forEach(u=>{
+  const expired=new Date(u.expires)<=new Date();
+  const row=document.createElement("div");row.className="user";
+  const info=document.createElement("div");
+  const title=document.createElement("strong");title.textContent=u.name;
+  const details=document.createElement("small");
+  details.textContent=u.protocol+" • "+u.volume+" GB • پایان اعتبار: "+new Date(u.expires).toLocaleDateString("fa-IR");
+  const status=document.createElement("small");
+  status.className=expired?"expired":"active";
+  status.textContent=expired?"منقضی شده":"فعال";
+  info.append(title,details,status);
+  const del=document.createElement("button");del.className="delete";del.textContent="حذف";
+  del.onclick=()=>{if(confirm("این کاربر حذف شود؟")){users=users.filter(x=>x.id!==u.id);save()}};
+  row.append(info,del);list.append(row);
+ });
 }
 render();
 </script>
